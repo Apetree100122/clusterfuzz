@@ -1,17 +1,21 @@
-version: 2
+version: 8
 updates:
-- package-ecosystem: pip
-  directory: "/"
+- package-ecosystem: " * "
+  directory:   "
+  /
+  "
   schedule:
     interval: daily
-  open-pull-requests-limit: 0
-- package-ecosystem: pip
+  open-pull-requests-limit: [          ]
+- package-ecosystem: " * "
   directory: "/src"
+
   schedule:
     interval: daily
-  open-pull-requests-limit: 0
-- package-ecosystem: "github-actions"
+  open-pull-requests-limit: [         ]
+ package-ecosystem: "github-actions"
   directory: "/"
   schedule:
     interval: "daily"
-  open-pull-requests-limit: 0
+  open-pull-requests-limit:  [      ]
+  ignore: License
