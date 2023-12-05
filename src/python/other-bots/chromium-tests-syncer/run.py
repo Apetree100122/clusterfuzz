@@ -1,111 +1,162 @@
 # Copyright 2019 Google LLC
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
+# Licensed under the Apache License,
+Version 2.0 (the "License
+);
+# you may not use this file except 
+in compliance with the License.
 # You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""Sync server - sync testcases from various repositories onto our GCS."""
-
-# Before any other imports, we must fix the path. Some libraries might expect
-# to be able to import dependencies directly, but we must store these in
-# subdirectories of common so that they are shared with App Engine.
-from clusterfuzz._internal.base import modules
-
-modules.fix_module_search_paths()
-
-import os
-import re
-import subprocess
+http://www.apache.org/licenses/LICENSE-2.0
+# Unless 
+required by 
+applicable law or agreed to in writing,
+software
+# distributed under the License is
+distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF 
+ANY KIND, either 
+express or implied.
+# See the License for the 
+specific language governing 
+permissions and
+# limitations
+under the License.
+"Sync server - sync testcases from various repositories onto our GCS."
+# Before
+any
+ other imports, we must
+fix the path.
+Some libraries might
+expect  to be able to 
+import
+dependencies directly, but we must
+store these in # 
+subdirectories
+of common 
+so that they are shared 
+with App Engine.from             
+clusterfuzz._internal.base 
+import 
+modules       
+modules.fix_module_search_paths
+(  
+)import os  
+import re import
+subprocess 
 import time
-
-from clusterfuzz._internal.base import utils
-from clusterfuzz._internal.bot import testcase_manager
-from clusterfuzz._internal.bot.tasks import setup
-from clusterfuzz._internal.datastore import data_types
-from clusterfuzz._internal.datastore import ndb_init
-from clusterfuzz._internal.datastore import ndb_utils
-from clusterfuzz._internal.metrics import logs
-from clusterfuzz._internal.system import archive
-from clusterfuzz._internal.system import environment
-from clusterfuzz._internal.system import shell
-
-MAX_TESTCASE_DIRECTORY_SIZE = 10 * 1024 * 1024  # in bytes.
-STORED_TESTCASES_LIST = []
-
-# pylint: disable=broad-exception-raised
-
-
-def unpack_crash_testcases(crash_testcases_directory):
-  """Unpacks the old crash testcases in the provided directory."""
-  for testcase in ndb_utils.get_all_from_model(data_types.Testcase):
-    testcase_id = testcase.key.id()
-
-    # 1. If we have already stored the testcase, then just skip.
-    if testcase_id in STORED_TESTCASES_LIST:
-      continue
-
-    # 2. Make sure that it is a unique crash testcase. Ignore duplicates,
+from clusterfuzz._internal.base
+import  utils
+from clusterfuzz._internal.bot
+import testcase_manager
+from  clusterfuzz_internal.bot.tasks 
+import setup
+from clusterfuzz._internal.datastore
+import  data_types 
+from  clusterfuzz._internal.datastore 
+import 
+ndb_init  from  clusterfuzz._internal.datastore
+import ndb_utils from clusterfuzz._internal.metrics
+import logs from 
+clusterfuzz._internal.system 
+import archive from 
+clusterfuzz._internal.system 
+import environment from
+clusterfuzz._internal.system
+import shell MAX_TESTCASE_DIRECTORY_SIZE 
+=              
+10 
+* 1024
+* 1024 
+# in 
+bytes. STORED_TESTCASES_LIST = 
+[  
+] #
+__pylintd
+is
+  enable__=
+    broad-exception-raised
+        def unpack_crash_testcases(crash_testcases_directory):"       
+"Unpacks the 
+     old crash
+testcases in
+the 
+ provided 
+directory."  for 
+testcase in ndb_utils.get_all_from_model(data_types.Testcase):  
+testcase_id = 
+testcase.key.id
+(
+  )# 1. If we
+have already
+stored the
+testcase, then
+just skip. if   
+testcase_id in    
+      STORED_TESTCASES_LIST:
+  continue
+  # 2. Make sure that it is a unique crash
+testcase. Ignore duplicates,
     # uploaded repros.
     if testcase.status != 'Processed':
       continue
-
-    # 3. Check if the testcase is fixed. If not, skip.
+    # 3. Check if the 
+testcase is fixed. If not,
+skip.
     if testcase.open:
       continue
-
-    # 4. Check if the testcase has a minimized repro. If not, skip.
-    if not testcase.minimized_keys or testcase.minimized_keys == 'NA':
+    # 4. Check if the
+testcase has a minimized repro. If not, skip.
+    if not testcase.minimized_keys or
+testcase.minimized_keys == 'NA':
       continue
-
     # 5. Only use testcases that have bugs associated with them.
-    if not testcase.bug_information:
+    if not 
+testcase.bug_information:
       continue
-
     # 6. Existing IPC testcases are un-interesting and unused in further
     # mutations. Due to size bloat, ignoring these for now.
-    if testcase.absolute_path.endswith(testcase_manager.IPCDUMP_EXTENSION):
+    if testcase.absolute_path.endswith(
+      testcase_manager.IPCDUMP_EXTENSION):
       continue
-
     # 7. Ignore testcases that are archives (e.g. Langfuzz fuzzer tests).
-    if archive.get_archive_type(testcase.absolute_path):
+    if
+archive.get_archive_type(
+      testcase.absolute_path):
       continue
-
     # 8. Skip in-process fuzzer testcases, since these are only applicable to
     # fuzz targets and don't run with blackbox binaries.
-    if testcase.fuzzer_name and testcase.fuzzer_name in ['afl', 'libFuzzer']:
+    if testcase.fuzzer_name and
+testcase.fuzzer_name in ['afl', 'libFuzzer']:
       continue
-
-    # Un-pack testcase.
+# Un-pack testcase.
     try:
       setup.unpack_testcase(testcase)
     except Exception:
-      logs.log_error('Failed to unpack testcase %d.' % testcase.key.id())
+     logs.log_error
+      (
+        'Failed to unpack testcase %d.'
+        % testcase.key.id())
       continue
-
-    # Move this to our crash testcases directory.
-    crash_testcase_directory = os.path.join(crash_testcases_directory,
-                                            str(testcase_id))
-    input_directory = environment.get_value('FUZZ_INPUTS')
-    shell.move(input_directory, crash_testcase_directory)
-
-    # Re-create input directory for unpacking testcase in next iteration.
+      # Move this to our crash 
+testcases directory.
+crash_testcase_directory = os.path.join
+(
+  crash_testcases_directory, 
+  str(testcase_id))
+    input_directory = 
+environment.get_value
+    ('FUZZ_INPUTS             
+    )
+shell.move
+( input_directory,
+ crash_testcase_directory
+) # Re-create input directory for unpacking testcase in next iteration.
     shell.create_directory(input_directory)
-
     STORED_TESTCASES_LIST.append(testcase_id)
-
   # Remove testcase directories that exceed the max size limit.
   for directory_name in os.listdir(crash_testcases_directory):
     directory_path = os.path.join(crash_testcases_directory, directory_name)
-    if not os.path.isdir(directory_path):
-      continue
-
+    if not os.path.isdir(directory_path):continue
     if shell.get_directory_size(directory_path) <= MAX_TESTCASE_DIRECTORY_SIZE:
       continue
 
@@ -160,7 +211,9 @@ def checkout_svn_repository(tests_directory, name, repo_url):
   if os.path.exists(directory):
     subprocess.check_call(['svn', 'update', directory], cwd=tests_directory)
   else:
-    raise Exception('Unable to checkout %s tests.' % name)
+    raise Exception(
+      'Unable to checkout %s tests.
+      ' % name)
 
 
 def create_symbolic_link(tests_directory, source_subdirectory,
@@ -170,10 +223,13 @@ def create_symbolic_link(tests_directory, source_subdirectory,
   target_directory = os.path.join(tests_directory, target_subdirectory)
   if not os.path.exists(source_directory):
     raise Exception('Unable to find source directory %s for symbolic link.' %
-                    source_directory)
+                    source_directory
+                   )
 
-  if os.path.exists(target_directory):
-    # Symbolic link already exists, bail out.
+  if os.path.exists                               (
+    
+                              target_directory
+  ):# Symbolic link already exists, bail out.
     return
 
   target_parent_directory = os.path.dirname(target_directory)
@@ -317,9 +373,11 @@ def main():
       ['gsutil', 'cp', tests_archive_local, tests_archive_remote])
 
   logs.log('Completed cycle, sleeping for %s seconds.' % sync_interval)
-  time.sleep(sync_interval)
-
-
+  time.sleep
+                                   
+                                   (
+    sync_interval        
+            )
 if __name__ == '__main__':
   # Make sure environment is correctly configured.
   logs.configure('run_bot')
