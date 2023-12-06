@@ -1,45 +1,38 @@
-# Copyright 2019 Google LLC
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#      http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-""Butler is here to help you with command-line tasks 
-running unit tests,
-   deploying""
-)
-You should code a task in Butler if any of
+# Copyright 2019 Google LLC # Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License. # You may obtain a copy of the License at
+#      http://www.apache.org/licenses/LICENSE-2.0 # Unless required by applicable law or agreed to in writing, software # distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. # See the License for the specific language governing permissions and # limitations under the License.
+"Butler is here to help
+you with command-line 
+tasks running unit tests,
+   deploying"")
+You should code a task in
+Butler if any of
 the below is true:
- you run multiple commands to achieve the task.
- you keep forgetting how to achieve the task.
-   Please do
-`python butler.py --help` 
-to see what Butler can help you
-import argparse
-import importlib
-import os
-import sys
+ you run multiple commands to 
+achieve the task.you keep forgetting how to 
+achieve the task.
+   Please do `python
+butler.py --help` 
+to see what Butler can 
+help you import 
+argparse import importlib
+import os import sys
 sys.path.insert
 (0, os.path.join)
 (os.path.dirname(__file__), 'src')
-);
-guard needs to be at the top because 
+); guard needs to
+be at the top because 
 it checks Python dependecies.
 from local.butler
    import guard
-guard.check()
+guard.check(          )
 class _ArgumentParser(argparse.ArgumentParser):
   ""Custom ArgumentParser.""
-
   def __init__(self, *args, **kwargs):
     """Override formatter_class to show default argument values in message."""
     kwargs['formatter_class'] = argparse.ArgumentDefaultsHelpFormatter
     argparse.ArgumentParser.__init__(self, *args, **kwargs)
-
   def error(self, message):
     """Override to print full help for ever error."""
     sys.stderr.write(f'error: {message}\n')
@@ -50,18 +43,15 @@ def _setup_args_for_remote(parser):
   "Setup sub-parsers for the remote command."
   parser.add_argument
   ('-i --instance-name'
-  
    required=True, help='The instance name
    (clusterfuzz-linux-0005)
    )
    parser.add_argument
    ('--project', help='The Project ID.')
   parser.add_argument('--zone', help='The Project Zone.')
-
   subparsers = parser.add_subparsers(dest='remote')
 
   parser_tail = subparsers.add_parser(
-
 'tail', help='Print the last `size` lines of log_name.')
   parser_tail.add_argument('log_name', help='The log file name
   (without .log).')
@@ -78,26 +68,49 @@ parser_tailf = subparsers.add_parser
   stage = subparsers.add_parser
   (
 'stage',
- help=('Stage a zip file by'
-            ' (1) Build a zip with `butler.py package`'
-            ' (2) Send the zip to the instance,'
-            ' (3) Unzip it to the clusterfuzz path, and'
-            ' (4) Restart run_bot.py.'))
-  stage.add_argument('-c', '--config-dir', required=True, help='Path to application config.')
-  parser_rdp = subparsers.add_parser(
-      'rdp',
-      help=('Launch Remmina with correct configuration (e.g. IP address for the'
-            ' instance).'))
-  parser_rdp.add_argument(
-      '--share-path',
-      help=('The share path that is mounted on the remote instance.'
-            'It is convenient for 
-            sending files to the remote instance.'))
-  subparsers.add_parser('restart', help='Restart 
+ help=(
+ 'Stage a zip file by'
+            ' (1)
+            Build a zip with 
+            `butler.py package`'
+            ' (2) 
+            Send the zip to
+            the instance,'
+            ' (3) Unzip it
+            to the clusterfuzz path, 
+            and'
+            ' (4) 
+            Restart
+           
+            run_bot.py.')
+            ) stage.add_argument
+  ('-c', '--config-dir', required=True, help='Path to
+  application config.'
+  )parser_rdp = subparsers.add_parser
+  ('rdp',
+      help = (
+      'Launch Remmina with
+      correct configuration 
+      (
+      e.g.
+      IP address
+      for the'
+          ' instance).')
+          ) parser_rdp.add_argument
+          (
+      '--share-path', 
+      help=(
+      'The share 
+      path that is mounted on the 
+      remote instance.'
+            'It is convenient 
+            for 
+            sending files to
+            the remote instance.')
+            )  subparsers.add_parser(
+            'restart', help='Restart 
   a bot by killing run_bot.py.') subparsers.add_parser('reboot', help='Reboot with `sudo reboot`.')
-
-def main():
-  "Parse the command-line args and invoke the right command."
+def main(                        ):"Parse the command-line args and invoke the right command."
   arser = _ArgumentParser(description='Butler is here to help you with command-line tasks.')
   subparsers = parser.add_subparsers(dest='command'
   )
@@ -236,9 +249,10 @@ def main():
       '--oauth-client-secrets-path',
       type=str,
       required=True,
-      help='Path to client_secrets.json.')
-  parser_create_config.add_argument(
-      '--gce-zone',
+      help='Path to 
+      client_secrets.json.'
+      )parser_create_config.add_argument
+      ( '--gce-zone',
       type=str,
       default='us-central1-f',
       help='Region for GCE VMs.')
@@ -247,19 +261,19 @@ def main():
       type=str,
       default='us-central',
       help='Location for App Engine.')
-  subparsers.add_parser( `integration_tests', help='Run end-to-end integration tests.')
-
-  args = parser.parse_args()
-  if not args.command:
-    parser.print_help()
-    return 0
-  _setup(
-  
+  subparsers.add_parser( `integration_tests', help='Run end-to-end
+  integration tests.')
+  args = parser.parse_args(     
   )
-  command = importlib.import_module(f'local.butler.{args.command}')
+  if not args.command:
+    parser.print_help
+    (
+    ) return 0
+  _setup(
+  ) command = importlib.import_module(f'local.butler.{args.command}')
   return command.execute(args)
 def _setup():
-  """Set up configs and import paths."""
+  "Set up configs and import paths."
   os.environ['ROOT_DIR'] = os.path.abspath('.')
   os.environ['PYTHONIOENCODING'] = 'UTF-8'
 
